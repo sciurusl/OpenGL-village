@@ -1,0 +1,134 @@
+#version 140
+
+struct Material {           // structure that describes currently used material
+  vec3  ambient;            // ambient component
+  vec3  diffuse;            // diffuse component
+  vec3  specular;           // specular component
+  float shininess;          // sharpness of specular reflection
+
+  bool  useTexture;         // defines whether the texture is used or not
+};
+
+uniform sampler2D texSampler;  // sampler for the texture access
+
+uniform Material material;     // current material
+
+struct PointLight{
+	vec3  ambient;       
+	vec3  diffuse;      
+	vec3  specular;     
+	vec3  position;
+	float cutOff;
+	float exponent;
+	float effect;
+	vec3 attenuation;
+	vec3  position;
+	vec3  direction;
+};
+
+struct directionalLight{
+	vec3  ambient;       
+	vec3  diffuse;      
+	vec3  specular;     
+	vec3  direction;
+	bool shines;
+};
+
+struc SpotLight{
+	vec3  ambient;       
+	vec3  diffuse;      
+	vec3  specular;     
+	vec3  position;
+	bool turnedOn;
+	vec3 attenuation;
+};
+
+uniform SpotLight spotLight;
+uniform DirectionalLight directionalLight;
+uniform PointLight pointLight;
+
+uniform vec3 reflectorPosition;   // reflector position (world coordinates)
+uniform vec3 reflectorDirection;  // reflector direction (world coordinates)
+
+smooth in vec3 thePosition;
+smooth in vec3 theNormal;
+smooth in vec4 theColor;
+smooth in vec3 pointLightPos;
+smooth in vec3 pointLightPosRef;
+smooth in vec3 refDirection;
+
+
+smooth in vec4 color_v;        // incoming fragment color (includes lighting)
+smooth in vec2 texCoord_v;     // fragment texture coordinates
+out vec4       color_f;        // outgoing fragment color
+
+uniform bool fog;
+in float visibility;
+
+
+vec4 directionalLight(Material material, vec3 vertexPosition, vec3 vertexNormal) {
+
+  vec3 ret = vec3(0.0);
+
+  // use the material and light structures to obtain the surface and light properties
+  // the vertexPosition and vertexNormal variables contain transformed surface position and normal
+  // store the ambient, diffuse and specular terms to the ret variable
+  // glsl provides some built-in functions, for example: reflect, normalize, pow, dot
+  // for directional lights, light.position contains the direction
+  // everything is expressed in the view coordinate system -> eye/camera is in the origin
+
+  vec3 L = normalize(pointLightPos);
+  vec3 R = reflect(-L, vertexNormal);
+  vec3 V = normalize(-vertexPosition);
+  float NdotL = max(0.0, dot(vertexNormal, L));
+  float RdotV = max(0.0, dot(R, V));
+
+  ret += material.ambient * vec3(0.0);
+  ret += material.diffuse *  vec3(1.0, 1.0, 0.5f) * NdotL;
+  ret += material.specular * vec3(1.0) * pow(RdotV, material.shininess);
+
+  return vec4(ret, 1.0);
+}
+
+vec4 spotLight(Material material, vec3 vertexPosition, vec3 vertexNormal) {
+
+  vec3 ret = vec3(0.0);
+
+  // use the material and light structures to obtain the surface and light properties
+  // the vertexPosition and vertexNormal variables contain transformed surface position and normal
+  // store the ambient, diffuse and specular terms to the ret variable
+  // for spot lights, light.position contains the light position
+  // everything is expressed in the view coordinate system -> eye/camera is in the origin
+
+  vec3 L = normalize(pointLightPosRef - vertexPosition);
+  vec3 R = reflect(-L, vertexNormal);
+  vec3 V = normalize(-vertexPosition);
+  float NdotL = max(0.0, dot(vertexNormal, L));
+  float RdotV = max(0.0, dot(R, V));
+  float spotCoef = max(0.0, dot(-L, refDirection));
+
+  ret += material.ambient * vec3(0.2f);
+  ret += material.diffuse * vec3(1.0) * NdotL;
+  ret += material.specular * vec3(1.0) * pow(RdotV, material.shininess);
+
+  if(spotCoef <  0.95f)
+    ret *= 0.0;
+  else
+    ret *= pow(spotCoef, 0.0);
+
+  return vec4(ret, 1.0);
+}
+
+void main() {
+
+  //vec3 L = normalize(pointLightPos-thePosition);
+  //color_f = color_v + directionalLight(material, thePosition,theNormal);
+  //color_f = color_f + spotLight(material, thePosition, theNormal);
+  //color_f = color_f*dot(L,normalize(theNormal));
+  // if material has a texture -> apply it
+  if(material.useTexture)
+    color_f =  color_f * texture(texSampler, texCoord_v);
+
+  if(fog)
+	color_f = mix(vec4(vec3(0.5, 0.5, 0.5), 1.0), color_f, visibility);
+}

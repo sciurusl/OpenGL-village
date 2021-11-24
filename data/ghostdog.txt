@@ -1,0 +1,12 @@
+#DownloadModelFormat: OBJ
+#GeometryFile: ghostdog.obj
+#MaterialFile: ghostdog.mtl
+#PreviewFile: ghostdog.jpg
+#OtherFiles: none
+#DownloadedFromURL:  unknown
+#DateOfDownload:   4.6.2007
+#CreatedBy:  unknown
+#CreatedIn:    C4D
+#UploadedBy: Martin Kov·Ëik
+#Description: zli pes
+#NumberOfPolygons: 500

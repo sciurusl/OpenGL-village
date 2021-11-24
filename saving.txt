@@ -1,0 +1,69 @@
+
+
+
+// hardcoded lights
+Light sun;
+float sunSpeed = 0.5f;
+Light spaceShipReflector;
+
+void setupLights() {
+
+  // set up sun parameters
+  sun.ambient  = vec3(0.0);
+  sun.diffuse  = vec3(1.0, 1.0, 0.5f);
+  sun.specular = vec3(1.0);
+
+  sun.position = (Vmatrix * vec4(cos(time * sunSpeed), 0.0, sin(time * sunSpeed), 0.0)).xyz;
+  //sun.position = (Vmatrix * vec4(1.0, 1.0, 1.0, 0.0)).xyz;
+
+  // set up reflector parameters
+  spaceShipReflector.ambient       = vec3(0.2f);
+  spaceShipReflector.diffuse       = vec3(1.0);
+  spaceShipReflector.specular      = vec3(1.0);
+  spaceShipReflector.spotCosCutOff = 0.95f;
+  spaceShipReflector.spotExponent  = 0.0;
+
+  spaceShipReflector.position = (Vmatrix * vec4(reflectorPosition, 1.0)).xyz;
+  spaceShipReflector.spotDirection = normalize((Vmatrix * vec4(reflectorDirection, 0.0)).xyz);
+}
+
+if(!fog){
+	  outputColor += directionalLight(sun, material, vertexPosition, vertexNormal);
+  }
+   outputColor += spotLight(spaceShipReflector, material, vertexPosition, vertexNormal);
+
+vec3 globalAmbientLight = vec3(0.4f);
+  vec4 outputColor = vec4(material.ambient * globalAmbientLight, 0.0);
+
+struct PointLight{
+	vec3  ambient;       
+	vec3  diffuse;      
+	vec3  specular;     
+	vec3  position;
+	float cutOff;
+	float exponent;
+	float effect;
+	vec3 attenuation;
+	vec3  direction;
+};
+
+struct DirectionalLight{
+	vec3  ambient;       
+	vec3  diffuse;      
+	vec3  specular;     
+	vec3  direction;
+	bool shines;
+};
+
+struct SpotLight{
+	vec3  ambient;       
+	vec3  diffuse;      
+	vec3  specular;     
+	vec3  position;
+	bool turnedOn;
+	vec3 attenuation;
+};
+
+uniform PointLight pointLight;
+uniform DirectionalLight dirLight;
+uniform SpotLight spotLight;

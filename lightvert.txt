@@ -1,0 +1,115 @@
+#version 140
+
+struct Material {           // structure that describes currently used material
+  vec3  ambient;            // ambient component
+  vec3  diffuse;            // diffuse component
+  vec3  specular;           // specular component
+  float shininess;          // sharpness of specular reflection
+
+  bool  useTexture;         // defines whether the texture is used or not
+};
+
+uniform sampler2D texSampler;  // sampler for the texture access
+
+uniform Material material;  
+
+in vec3 position;           // vertex position in world space
+in vec3 normal;             // vertex normal
+in vec2 texCoord;           // incoming texture coordinates
+
+uniform bool fog;
+
+uniform float time;         // time used for simulation of moving lights (such as sun)
+
+uniform mat4 PVMmatrix;     // Projection * View * Model  --> model to clip coordinates
+uniform mat4 Pmatrix;     // Projection * View * Model  --> model to clip coordinates
+uniform mat4 Vmatrix;       // View                       --> world to eye coordinates
+uniform mat4 Mmatrix;       // Model                      --> model to world coordinates
+uniform mat4 normalMatrix;  // inverse transposed Mmatrix
+
+smooth out vec2 texCoord_v;  // outgoing texture coordinates
+smooth out vec4 color_v;     // outgoing fragment color
+
+smooth out vec3 thePosition;
+smooth out vec4 theColor;
+smooth out vec3 theNormal;
+smooth out vec3 pointLightPos;
+smooth out vec3 pointLightPosRef;
+smooth out vec3 refDirection;
+
+struct PointLight{
+	vec3  ambient;       
+	vec3  diffuse;      
+	vec3  specular;     
+	vec3  position;
+	float cutOff;
+	float exponent;
+	float effect;
+	vec3 attenuation;
+	vec3  position;
+	vec3  direction;
+};
+
+struct directionalLight{
+	vec3  ambient;       
+	vec3  diffuse;      
+	vec3  specular;     
+	vec3  direction;
+	bool shines;
+};
+
+struc SpotLight{
+	vec3  ambient;       
+	vec3  diffuse;      
+	vec3  specular;     
+	vec3  position;
+	bool turnedOn;
+	vec3 attenuation;
+};
+
+uniform SpotLight spotLight;
+uniform DirectionalLight directionalLight;
+uniform PointLight pointLight;
+
+uniform vec3 reflectorPosition;   // reflector position (world coordinates)
+uniform vec3 reflectorDirection;
+
+out float visibility;
+float density = 0.5;
+float gradient = 1.5;
+
+void main() {
+
+  visibility = 0.01;
+
+  // eye-coordinates position and normal of vertex
+  vec3 vertexPosition = (Vmatrix * Mmatrix * vec4(position, 1.0)).xyz;         // vertex in eye coordinates
+  vec3 vertexNormal   = normalize( (Vmatrix * normalMatrix * vec4(normal, 0.0) ).xyz);   // normal in eye coordinates by NormalMatrix
+
+  
+  // initialize the output color with the global ambient term
+  vec4 outputColor = vec4(0.0, 0.0, 0.0, 1.0f);
+
+  // accumulate contributions from all lights
+
+  // vertex position after the projection (gl_Position is built-in output variable)
+  gl_Position = PVMmatrix * vec4(position, 1);   // out:v vertex in clip coordinates
+
+  thePosition = position;
+  theColor = outputColor;
+  theNormal = vertexNormal;
+
+  vec4 distanceCam = Vmatrix* Mmatrix * vec4(position, 1.0);
+  float distance  = length(distanceCam);
+
+  pointLightPos = sun.position;
+  pointLightPosRef = spaceShipReflector.position;
+  refDirection = spaceShipReflector.spotDirection;
+
+  visibility = exp(-pow((distance*density), gradient));
+  visibility = clamp(visibility,0.0, 1.0);
+
+  // outputs entering the fragment shader
+  color_v = outputColor;
+  texCoord_v = texCoord;
+}
