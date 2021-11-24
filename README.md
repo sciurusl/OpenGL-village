@@ -5,4 +5,4 @@ There are three functions missing in the vesnice.cpp file, which is the main fun
 
 Pgr.h is a library provided by the teachers, which contained the OpenGL functions.
 
-Vertex and Fragment shaders are in Shaders directory.
+I don't own any of the models.
